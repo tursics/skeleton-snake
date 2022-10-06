@@ -16,8 +16,10 @@ var map = new mapboxgl.Map({
 	minZoom: 18,
 	maxZoom: 20,
 	zoom: 19,
+	bearing: -25,
 	pitch: 60,
 	hash: true,
+	interactive: false,
 //	maxBounds: [[6.4, 51.22], [6.8, 51.46]]
 });
 var canvas = map.getCanvasContainer();
@@ -87,17 +89,17 @@ class MapboxGLButtonControl {
 
 function addMapControls() {
 	map.addControl(new mapboxgl.FullscreenControl(), 'top-left');
-	map.addControl(new mapboxgl.NavigationControl(), 'top-left');
-	map.addControl(new mapboxgl.GeolocateControl({
+	// map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+	/* map.addControl(new mapboxgl.GeolocateControl({
 		positionOptions: {
 			enableHighAccuracy: true
 		}
-	}), 'top-left');
-	map.addControl(new MapboxGLButtonControl({
+	}), 'top-left'); */
+	/* map.addControl(new MapboxGLButtonControl({
 		title: 'Automatisch drehen',
 		html: '<i class="fas fa-sync-alt fa-lg"></i>',
 		eventHandler: startRotateCamera
-	}), 'top-left');
+	}), 'top-left'); */
 
 	map.addControl(new MapboxGLButtonControl({
 		title: '',
@@ -145,7 +147,7 @@ function addMapControls() {
 		title: 'place large object',
 		html: '',
 		className: 'nav-button',
-		eventHandler: setObjectSeaShipping
+		eventHandler: setObjectSnake
 	}), 'top-right');
 }
 
@@ -325,12 +327,61 @@ function initSourcesAndLayers() {
 
 //-----------------------------------------------------------------------
 
+function initGameControls() {
+	// pixels the map pans when the up or down arrow is clicked
+	const deltaDistance = 100;
+
+	// degrees the map rotates when the left or right arrow is clicked
+	const deltaDegrees = 25;
+
+	function easing(t) {
+		return t * (2 - t);
+	}
+
+	map.getCanvas().focus();
+
+	map.getCanvas().addEventListener(
+		'keydown',
+		(e) => {
+			e.preventDefault();
+			if (e.which === 38) {
+	// up
+	map.panBy([0, -deltaDistance], {
+	easing: easing
+	});
+			} else if (e.which === 40) {
+	// down
+	map.panBy([0, deltaDistance], {
+	easing: easing
+	});
+			} else if (e.which === 37) {
+	// left
+	map.easeTo({
+	bearing: map.getBearing() - deltaDegrees,
+	easing: easing
+	});
+			} else if (e.which === 39) {
+	// right
+	map.easeTo({
+	bearing: map.getBearing() + deltaDegrees,
+	easing: easing
+	});
+			}
+		},
+		true
+	);
+}
+
+//-----------------------------------------------------------------------
+
 function pushAreaObject(name, rect, height) {
-	var x = Math.abs(rect.left - rect.right);
-	var y = Math.abs(rect.top - rect.bottom);
-	var min = Math.min(x, y);
-	var idx = areaPolygon.features.length;
-	var imageName = name + idx;
+	// var x = Math.abs(rect.left - rect.right);
+	// var y = Math.abs(rect.top - rect.bottom);
+	// var min = Math.min(x, y);
+	// var idx = areaPolygon.features.length;
+	// var imageName = name + idx;
+
+	console.log(name);
 
 	areaPolygon.features.push({
 		'type': 'Feature',
@@ -340,35 +391,8 @@ function pushAreaObject(name, rect, height) {
 		},
 		'properties': {
 			'name': name,
-			'imageName': imageName,
 			'baseRect': rect,
-			'height': height,
-			'imageRect': {
-				top: rect.top - (y - min / 2) / 2,
-				left: rect.left + (x - min / 2) / 2,
-				right: rect.right - (x - min / 2) / 2,
-				bottom: rect.bottom + (y - min / 2) / 2
-			}
-		}
-	});
-
-	map.addSource(imageName, {
-		type: 'image',
-		url: 'assets/share-' + name + '.png',
-		coordinates: [
-			[0, 0],
-			[0, 0],
-			[0, 0],
-			[0, 0]
-		]
-	});
-
-	map.addLayer({
-		id: imageName + '-layer',
-		'type': 'raster',
-		'source': imageName,
-		'paint': {
-			'raster-fade-duration': 0
+			'height': height
 		}
 	});
 }
@@ -378,9 +402,7 @@ function pushAreaObject(name, rect, height) {
 function onMoveAreaObject(e) {
 	var coords = e.lngLat,
 		idx = areaPolygon.features.length - 1,
-		rect = areaPolygon.features[idx].properties.baseRect,
-		imageRect = areaPolygon.features[idx].properties.imageRect,
-		imageName = areaPolygon.features[idx].properties.imageName;
+		rect = areaPolygon.features[idx].properties.baseRect;
 
 	canvas.style.cursor = 'grabbing';
 
@@ -392,15 +414,6 @@ function onMoveAreaObject(e) {
 		[coords.lng + rect.left, coords.lat + rect.top]
 		]];
 	map.getSource('area').setData(areaPolygon);
-
-	var coordinates = map.getSource(imageName).coordinates;
-	coordinates = [
-		[coords.lng + imageRect.left, coords.lat + imageRect.top],
-		[coords.lng + imageRect.left, coords.lat + imageRect.bottom],
-		[coords.lng + imageRect.right, coords.lat + imageRect.bottom],
-		[coords.lng + imageRect.right, coords.lat + imageRect.top],
-		];
-	map.getSource(imageName).setCoordinates(coordinates);
 }
 
 //-----------------------------------------------------------------------
@@ -504,8 +517,8 @@ function setObjectWaitingHall() {
 
 //-----------------------------------------------------------------------
 
-function setObjectSeaShipping() {
-	setObjectGenerel('seashipping', {
+function setObjectSnake() {
+	setObjectGenerel('snake', {
 		top: 0.00009,
 		left: 0,
 		right: 0.00050,
@@ -678,6 +691,7 @@ map.on('load', function () {
 	addMapControls();
 	add3dBuilding();
 
+	initGameControls();
 });
 
 //-----------------------------------------------------------------------
