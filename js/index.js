@@ -231,6 +231,10 @@ var areaPolygon = {
 	'type': 'FeatureCollection',
 	'features': []
 };
+var skeletonPolygon = {
+	'type': 'FeatureCollection',
+	'features': []
+};
 
 function setObjectPoint() {
 	map.addSource('point', {
@@ -300,28 +304,38 @@ function setObjectPoint() {
 
 function initSourcesAndLayers() {
 	map.addSource('area', {
-		'type': 'geojson',
-		'data': areaPolygon
+		type: 'geojson',
+		data: areaPolygon
 	});
 
 	map.addLayer({
-		'id': 'area',
-		'type': 'fill-extrusion',
-		'minzoom': 15,
-		'source': 'area',
+		id: 'area',
+		type: 'fill-extrusion',
+		minzoom: 15,
+		source: 'area',
 		paint: {
-			'fill-extrusion-color': '#ffe500',
-			'fill-extrusion-height': [
-				'interpolate',
-				['linear'],
-				['zoom'],
-				15,
-				0,
-				15.05,
-				['get', 'height']
-			],
+			'fill-extrusion-color': '#ffffff',
+			'fill-extrusion-base': 5,
+			'fill-extrusion-height': 10,
 			'fill-extrusion-opacity': 1
-		},
+		}
+	});
+
+	map.addSource('skeleton', {
+		type: 'geojson',
+		data: skeletonPolygon
+	});
+
+	map.addLayer({
+		id: 'skeleton',
+		type: 'fill-extrusion',
+		source: 'skeleton',
+		paint: {
+			'fill-extrusion-color': '#ffffff',
+			'fill-extrusion-base': 5,
+			'fill-extrusion-height': 10,
+			'fill-extrusion-opacity': 1
+		}
 	});
 }
 
