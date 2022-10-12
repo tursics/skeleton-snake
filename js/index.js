@@ -332,9 +332,15 @@ function initSourcesAndLayers() {
 		source: 'skeleton',
 		paint: {
 			'fill-extrusion-color': '#ffffff',
-			'fill-extrusion-base': 5,
-			'fill-extrusion-height': 10,
-			'fill-extrusion-opacity': 1
+			'fill-extrusion-opacity': 1,
+			'fill-extrusion-base': {
+				type: 'identity',
+				property: 'base'
+			},
+			'fill-extrusion-height': {
+				type: 'identity',
+				property: 'height'
+			}
 		}
 	});
 }
@@ -395,8 +401,6 @@ function pushAreaObject(name, rect, height) {
 	// var idx = areaPolygon.features.length;
 	// var imageName = name + idx;
 
-	console.log(name);
-
 	areaPolygon.features.push({
 		'type': 'Feature',
 		'geometry': {
@@ -432,6 +436,48 @@ function onMoveAreaObject(e) {
 
 //-----------------------------------------------------------------------
 
+function getBoneFeature(properties) {
+	var options = {
+		steps: 16,
+		units: 'meters',
+		properties: properties
+	};
+	var radius = 1;
+	var feature = turf.circle(properties.center, radius, options);
+
+	return feature;
+}
+
+//-----------------------------------------------------------------------
+
+function pushBone() {
+	var properties = {};
+
+	properties.base = 0;
+	properties.height = 5;
+	properties.center = [0, 0];
+
+	skeletonPolygon.features.push(getBoneFeature(properties));
+}
+
+//-----------------------------------------------------------------------
+
+function onMoveSkeleton(e) {
+	var coords = [e.lngLat.lng, e.lngLat.lat],
+		idx = skeletonPolygon.features.length - 1,
+		properties = skeletonPolygon.features[idx].properties;
+
+	canvas.style.cursor = 'grabbing';
+
+	// coords.lng and coords.lat
+	properties.center = coords;
+
+	skeletonPolygon.features[idx] = getBoneFeature(properties);
+	map.getSource('skeleton').setData(skeletonPolygon);
+}
+
+//-----------------------------------------------------------------------
+
 function onMouseEnterAreaObject() {
 	map.setPaintProperty('area', 'circle-color', '#3bb2d0');
 	canvas.style.cursor = 'move';
@@ -451,6 +497,7 @@ function setObjectGenerel(name, rect, height) {
 		canvas.style.cursor = '';
 
 		map.off('mousemove', onMoveAreaObject);
+		map.off('mousemove', onMoveSkeleton);
 		map.off('click', onClick);
 
 //		map.on('mouseenter', 'area', onMouseEnterAreaObject);
@@ -458,8 +505,10 @@ function setObjectGenerel(name, rect, height) {
 	}
 
 	pushAreaObject(name, rect, height);
+	pushBone();
 
 	map.on('mousemove', onMoveAreaObject);
+	map.on('mousemove', onMoveSkeleton);
 	map.on('click', onClick);
 }
 
