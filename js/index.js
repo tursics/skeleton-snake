@@ -437,24 +437,25 @@ function onMoveAreaObject(e) {
 //-----------------------------------------------------------------------
 
 function getBonesFeatures(properties) {
+	function pos(x, y) {
+		var unitX = 0.0000295,
+			unitY = 0.000018;
+
+		return [properties.center[0] + unitX * x, properties.center[1] + unitY * y];
+	}
+
 	var options = {
 		steps: 16,
 		units: 'meters',
 		properties: properties
 	},
 		features = [],
-		radius = 1,
-		unitsX = 0.0000295,
-		unitsY = 0.000018;
+		radius = properties.height / 2;
 
-	features.push(turf.circle(properties.center, radius, options));
-
-	properties.center[0] += radius * unitsX;
-	features.push(turf.circle(properties.center, radius, options));
-	properties.center[0] -= radius * unitsX;
-
-	properties.center[1] += radius * unitsY;
-	features.push(turf.circle(properties.center, radius, options));
+	features.push(turf.circle(pos(0 * radius, 0 * radius), radius, options));
+	features.push(turf.circle(pos(1 * radius, 0 * radius), radius, options));
+	features.push(turf.circle(pos(0 * radius, 1 * radius), radius, options));
+	features.push(turf.circle(pos(2 * radius, 0 * radius), radius, options));
 
 	return features;
 }
@@ -465,7 +466,7 @@ function pushBones() {
 	var properties = {};
 
 	properties.base = 0;
-	properties.height = 2;
+	properties.height = 4;
 	properties.center = [0, 0];
 
 	skeletonPolygon.features = getBonesFeatures(properties);
@@ -504,7 +505,7 @@ function setObjectGenerel(name, rect, height) {
 	function onClick(e) {
 		canvas.style.cursor = '';
 
-		map.off('mousemove', onMoveAreaObject);
+		// map.off('mousemove', onMoveAreaObject);
 		map.off('mousemove', onMoveSkeleton);
 		map.off('click', onClick);
 
@@ -512,10 +513,10 @@ function setObjectGenerel(name, rect, height) {
 //		map.on('mouseleave', 'area', onMouseLeaveAreaObject);
 	}
 
-	pushAreaObject(name, rect, height);
+	// pushAreaObject(name, rect, height);
 	pushBones();
 
-	map.on('mousemove', onMoveAreaObject);
+	// map.on('mousemove', onMoveAreaObject);
 	map.on('mousemove', onMoveSkeleton);
 	map.on('click', onClick);
 }
