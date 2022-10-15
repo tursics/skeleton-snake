@@ -436,28 +436,39 @@ function onMoveAreaObject(e) {
 
 //-----------------------------------------------------------------------
 
-function getBoneFeature(properties) {
+function getBonesFeatures(properties) {
 	var options = {
 		steps: 16,
 		units: 'meters',
 		properties: properties
-	};
-	var radius = 1;
-	var feature = turf.circle(properties.center, radius, options);
+	},
+		features = [],
+		radius = 1,
+		unitsX = 0.0000295,
+		unitsY = 0.000018;
 
-	return feature;
+	features.push(turf.circle(properties.center, radius, options));
+
+	properties.center[0] += radius * unitsX;
+	features.push(turf.circle(properties.center, radius, options));
+	properties.center[0] -= radius * unitsX;
+
+	properties.center[1] += radius * unitsY;
+	features.push(turf.circle(properties.center, radius, options));
+
+	return features;
 }
 
 //-----------------------------------------------------------------------
 
-function pushBone() {
+function pushBones() {
 	var properties = {};
 
 	properties.base = 0;
-	properties.height = 5;
+	properties.height = 2;
 	properties.center = [0, 0];
 
-	skeletonPolygon.features.push(getBoneFeature(properties));
+	skeletonPolygon.features = getBonesFeatures(properties);
 }
 
 //-----------------------------------------------------------------------
@@ -467,12 +478,9 @@ function onMoveSkeleton(e) {
 		idx = skeletonPolygon.features.length - 1,
 		properties = skeletonPolygon.features[idx].properties;
 
-	canvas.style.cursor = 'grabbing';
-
-	// coords.lng and coords.lat
 	properties.center = coords;
 
-	skeletonPolygon.features[idx] = getBoneFeature(properties);
+	skeletonPolygon.features = getBonesFeatures(properties);
 	map.getSource('skeleton').setData(skeletonPolygon);
 }
 
@@ -505,7 +513,7 @@ function setObjectGenerel(name, rect, height) {
 	}
 
 	pushAreaObject(name, rect, height);
-	pushBone();
+	pushBones();
 
 	map.on('mousemove', onMoveAreaObject);
 	map.on('mousemove', onMoveSkeleton);
